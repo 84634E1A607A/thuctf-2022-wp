@@ -471,6 +471,75 @@ void _start()
 // THUCTF{Nice_TrY_wElC0M3_To_tHE_5h31Lc0DE_woRld}
 ```
 
+(比赛结束后更新, 长度226:)
+```cpp
+typedef unsigned char byte;
+#define x 102
+
+static long system_call_linux_x86_64(long number, long _1, long _2, long _3)
+{
+    long value;
+    __asm__ volatile("syscall"
+                     : "=a"(value)
+                     : "a"(number), "D"(_1), "S"(_2), "d"(_3)
+                     : "rcx", "r11", "cc", "memory");
+
+    return value;
+}
+
+static long read(unsigned int fd, const char *buf, long count)
+{
+    return system_call_linux_x86_64(0, fd, (long)buf, count);
+}
+
+static long write(unsigned int fd, const char *buf, long count)
+{
+    return system_call_linux_x86_64(1, fd, (long)buf, count);
+}
+
+static long open(const char *filename, int flags)
+{
+    return system_call_linux_x86_64(2, (long)filename, flags, 0);
+}
+
+static void exit(int code)
+{
+    system_call_linux_x86_64(60, code, 0, 0);
+}
+
+void _start()
+{
+    char maze[0x4000];
+    /* read the maze map */
+    const char filename[] = {'m', 'a', 'z', 'e', 0};
+    int fd = open(filename, 0);
+    read(fd, maze, 0x4000);
+    char direDelta[4] = {1, x, -1, -x};
+    byte direTry[4] = {1, 0, 3, 2};
+    const char direDiscription[4] = {'d', 's', 'a', 'w'};
+    register byte dire = 1;        // 0->x+ 1->y+ 2->x- 3->y-
+    register int p = x + 1;
+    write(1, direDiscription + 1, 1);
+    while (maze[p] != 'E')
+    {
+        for (register int i=0; i<4; ++i)
+        {
+            byte d = (dire + direTry[i]) % 4;
+            if (maze[p + direDelta[d]] != '#')
+            {
+                dire = d;
+                break;
+            }
+        }
+
+        write(1, direDiscription + dire, 1);
+        p += direDelta[dire];
+    }
+
+    exit(0);
+}
+```
+
 ### 人間観察バラエティ
 
 不知道, 我瞎做的, 还是第一个做的, 分也是挺低的 (
